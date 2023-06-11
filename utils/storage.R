@@ -3,6 +3,9 @@
 # for example. large matrices. This function converts
 # method output to some qunatity that we need to
 # store for each replication
-storage <- function(output, truth) {
-	output
+storage <- function(output, truth_combined) {
+	# truth_combined has two components: .global and .local
+	theta <- truth_combined[[".local"]][["theta"]]
+	stopifnot(!is.null(theta))
+	output - theta
 }
