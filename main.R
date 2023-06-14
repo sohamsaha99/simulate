@@ -5,7 +5,7 @@ params <- list(
 	mu = 1,
 	sigma = 2,
 	# additional parameters
-	n = 60,
+	n = 32,
 	delta = 1
 )
 
@@ -47,34 +47,19 @@ evaluators_list <- list(
 # Declare how to store replications in file "utils/storage.R"
 
 #################### STEP 6 ###########################
-# Check near line 36 in file "evaluate/replicate.R"
-# cbind shoudl work if output from each iteration is vector or numeric
-source("./evaluate/replicate.R", chdir = TRUE, local = TRUE)
+# Check near line 41 in file "evaluate/replicate.R"
+# cbind should work if output from each iteration is vector or numeric
 # t <- evaluate(methods_list, evaluators_list, params, B = 8000, cores = 10)
 
 #################### STEP 7 ###########################
 # vary params. If multiple variables, do expand.grid
 vary_params <- list(
-	sigma = seq(from = 0.01, to = 10, length.out = 20)
+	sigma = seq(from = 0.01, to = 5, length.out = 20)
 )
 # this will store the results for each variation of the parameters
-vary_length <- length(vary_params[[1]])
-results_list <- list()
-for(iter_num in 1:vary_length) {
-	for(v in names(vary_params)) {
-		if(v %in% names(params)) {
-			params[[v]] <- vary_params[[v]][[iter_num]]
-		} else {
-			print("Warning: variable not present...")
-		}
-	}
-	t <- evaluate(methods_list, evaluators_list, params, B = 5000, cores = 12)
-	for(v in names(vary_params)) {
-		t[[v]] <- vary_params[[v]][[iter_num]]
-	}
-	results_list[[iter_num]] <- t
-}
-##### TODO: Implement nested parallel. Maybe impractical
+source("evaluate/vary_over_parameters.R", chdir = TRUE, local = TRUE)
+results_list <- vary_over_parameters(vary_params, methods_list, evaluators_list, params, B = 5000, ncores = 12)
+##### TODO: Check the code for multiple variables in vary_params
 
 # combine all results from list into a single dataframe
 library(dplyr)
@@ -90,7 +75,6 @@ write.csv(result, file = "result.csv", row.names = FALSE)
 plot_var <- names(vary_params)[1]
 library(tidyr)
 library(ggplot2)
-# TODO: use proper length for methods list
 result <- result %>% pivot_longer(
 		  all_of(1:(length(setdiff(names(methods_list), ".intermediate"))*length(evaluators_list))),
 		  names_to = c("method", ".value"),
